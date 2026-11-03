@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 할 일</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 80px 20px; background: #f4f5fa; color: #263047; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 580px; margin: auto; padding: 36px; background: #fff; border: 1px solid #e7e9f1; border-radius: 24px; box-shadow: 0 16px 50px #26304709; }
+    .eyebrow { margin: 0 0 12px; color: #6866d8; font-size: 11px; font-weight: 750; letter-spacing: 2px; }
+    h1 { margin: 0 0 10px; font-size: 30px; letter-spacing: -1px; }
+    .subtitle { margin: 0 0 28px; color: #7a8294; font-size: 14px; line-height: 1.7; }
+    form { display: flex; gap: 10px; }
+    #task-input { flex: 1; min-width: 0; padding: 14px; border: 1px solid #dce0eb; border-radius: 12px; background: #fafbfe; color: inherit; font: inherit; }
+    button { border: 0; border-radius: 10px; font: inherit; cursor: pointer; }
+    .add { padding: 0 22px; background: #6866d8; color: white; font-weight: 650; }
+    .add:hover { background: #5351bf; }
+    :focus-visible { outline: 3px solid #a7a5f5; outline-offset: 3px; }
+    .summary { margin: 26px 0 10px; color: #7a8294; font-size: 13px; }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid #edf0f5; }
+    li label { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; }
+    input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; margin: 0; accent-color: #6866d8; cursor: pointer; }
+    .task-text { overflow-wrap: anywhere; line-height: 1.6; }
+    .completed .task-text { text-decoration: line-through; color: #969dad; }
+    .delete { flex-shrink: 0; padding: 7px 11px; background: #fff0f1; color: #b44655; font-size: 12px; }
+    .delete:hover { background: #ffe0e4; }
+    .empty { margin: 0; padding: 38px 0 20px; color: #969dad; text-align: center; font-size: 14px; line-height: 1.8; }
+    [hidden] { display: none; }
+    @media (max-width: 480px) { body { padding: 32px 16px; } main { padding: 28px 20px; } #task-input { font-size: 16px; } .add { padding: 0 18px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">ONE THING AT A TIME</p>
+    <h1>오늘의 할 일</h1>
+    <p class="subtitle">작은 일부터 하나씩, 가볍게 시작해 보세요.</p>
+    <form id="task-form">
+      <input id="task-input" type="text" aria-label="새로운 할 일" placeholder="어떤 일을 할 예정인가요?" maxlength="2000" autocomplete="off" required>
+      <button type="submit" class="add">추가</button>
+    </form>
+    <p id="summary" class="summary" role="status" aria-live="polite">전체 0개 · 완료 0개</p>
+    <ul id="task-list" aria-label="할 일 목록"></ul>
+    <p id="empty" class="empty">아직 등록한 할 일이 없어요.<br>첫 번째 할 일을 추가해 보세요.</p>
+  </main>
+  <script>
+    'use strict';
+    const form = document.getElementById('task-form');
+    const input = document.getElementById('task-input');
+    const list = document.getElementById('task-list');
+    const summary = document.getElementById('summary');
+    const empty = document.getElementById('empty');
+
+    function updateSummary() {
+      const total = list.children.length;
+      const completed = list.querySelectorAll('input:checked').length;
+      summary.textContent = `전체 ${total}개 · 완료 ${completed}개`;
+      empty.hidden = total > 0;
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      // 한글 조합 중 Enter가 입력되면 조합을 마친 후 추가합니다.
+      if (composing) return;
+      const text = input.value.trim();
+      if (!text) { input.value = ''; input.focus(); return; }
+      const item = document.createElement('li');
+      const label = document.createElement('label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      const title = document.createElement('span');
+      title.className = 'task-text';
+      title.textContent = text;
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'delete';
+      remove.textContent = '삭제';
+      remove.setAttribute('aria-label', `${text} 삭제`);
+      checkbox.addEventListener('change', () => {
+        item.classList.toggle('completed', checkbox.checked);
+        updateSummary();
+      });
+      remove.addEventListener('click', () => {
+        const next = item.nextElementSibling || item.previousElementSibling;
+        item.remove();
+        updateSummary();
+        if (next) next.querySelector('.delete').focus();
+        else input.focus();
+      });
+      label.append(checkbox, title);
+      item.append(label, remove);
+      list.append(item);
+      input.value = '';
+      input.focus();
+      updateSummary();
+    });
+    let composing = false;
+    input.addEventListener('compositionstart', () => { composing = true; });
+    input.addEventListener('compositionend', () => { composing = false; });
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && (event.isComposing || event.keyCode === 229)) event.preventDefault();
+    });
+  </script>
+</body>
+</html>
